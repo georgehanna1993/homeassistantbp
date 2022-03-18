@@ -1,0 +1,97 @@
+blueprint:
+  name: Start music on Alexa Media Player when a NFC-tag is scanned
+  description: |
+    ## Introduction
+    When a tag is scanned, start the associated music on the selected Alexa media player. 
+    You can select from various streaming services or run your own commands with the "universal function".
+    ## Supported Streaming Services
+    ### Spotify
+    Song name must be songname (e.g. Still Alive),
+    songname and interpret (e.g. Still alive from Red ),
+    "playlist" and playlist name (e.g. Playlist Oldies)
+    or the name of a featured playlist from Spotify (e.g. Missed Hits).
+    ### Universal
+    You can put a command in the songname which you would say to your Alexa device e.g.
+    "Play my playlist Oldies on Spotify" (leave out your trigger word from your device).
+    Requires Alexa Media Player version 3.4.0 or newer.
+    ### Amazon Music, Deezer and TuneIn
+    This should work as well, but I don't use them personally, so I cant say much abaout how to enter
+    the song title. If you use them and know how to format them, please inform me so I can add it to the description.
+  domain: automation
+  input:
+    tag_id:
+      name: Tag ID
+      description:
+        The tag ID of your NFC trigger. Can be found under Settings --> NFC Tags
+        and then click on the NFC Tag you want to choose.
+    alexa_entity_id:
+      name: Alexa player
+      description: The entity ID of the alexa player to use
+      selector:
+        entity:
+          domain: media_player
+    source:
+      name: Streaming Service
+      description: Streaming service which should play your music
+      default: Spotify
+      selector:
+        select:
+          options:
+            - Amazon Music
+            - Spotify
+            - Apple Music
+            - Deezer
+            - TuneIn
+            - Universal
+    volume:
+      name: Volume
+      description: Volume of the playback. 0 for 0% to 1 for 100%. E.g. a volume of 40% would be 0.4.
+      selector:
+        number:
+          min: 0
+          max: 1
+          step: 0.01
+    song_name:
+      name: Song name.
+      description:
+        The name of the song to play. Look at the description of the Blueprint
+        to see the right formatting for your specific Streaming service.
+    shuffle:
+      name: Shuffle mode
+      default: False
+      selector:
+        boolean:
+
+variables:
+  source: !input source
+  alexa_entity_id: !input alexa_entity_id
+  song: !input song_name
+
+trigger:
+  - platform: tag
+    tag_id: !input tag_id
+action:
+  - service: media_player.volume_set
+    entity_id: !input alexa_entity_id
+    data:
+      volume_level: !input volume
+  - service: media_player.shuffle_set
+    entity_id: !input alexa_entity_id
+    data:
+      shuffle: !input shuffle
+  - service: media_player.play_media
+    data_template:
+      entity_id: !input alexa_entity_id
+      media_content_id: !input song_name
+      media_content_type: >
+        {% if source == "Universal"%}
+          custom
+        {% elif source == "Apple Music" %}
+          APPLE_MUSIC
+        {% elif source == "Amazon Music"%}
+          AMAZON_MUSIC
+        {% else %}
+          {% filter upper %}
+            {{source}}
+          {% endfilter %}
+        {% endif %}
