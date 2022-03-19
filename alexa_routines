@@ -1,0 +1,9 @@
+alias: New Script
+sequence:
+  - service: media_player.play_media
+    data:
+      media_content_id: Romantic
+      media_content_type: routine
+    target:
+      entity_id: media_player.george_s_echo_dot
+mode: single
